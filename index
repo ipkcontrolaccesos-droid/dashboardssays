@@ -1,1 +1,1432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSAYS - Centro de Control de Dotación Contractual (TR) & Rotación</title>
+  <!-- SheetJS y Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      /* Paleta Corporativa SSAYS */
+      --ssays-green: #006837;
+      --ssays-green-light: #009640;
+      --ssays-green-dark: #004d25;
+      --ssays-cyan: #00bdf2;
+      --ssays-cyan-hover: #00a4d4;
+      
+      /* Fondos y Estructura en Modo Ejecutivo */
+      --bg-dark: #07130e;
+      --card-bg: #0e221b;
+      --card-border: #16382c;
+      --card-border-hover: #009640;
+      
+      /* Acentos de Datos */
+      --accent-blue: #00bdf2;
+      --accent-green: #10b981;
+      --accent-emerald: #059669;
+      --accent-amber: #f59e0b;
+      --accent-rose: #ef4444;
+      --accent-purple: #8b5cf6;
+      
+      /* Tipografía y sombras */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(circle at 15% 10%, rgba(0, 104, 55, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 85% 20%, rgba(0, 189, 242, 0.1) 0%, transparent 35%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Barra Superior Corporativa */
+    .command-header {
+      background: linear-gradient(90deg, #061510 0%, #0c241c 50%, #061510 100%);
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--ssays-green);
+      box-shadow: 0 4px 20px rgba(0, 104, 55, 0.25);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .logo-container {
+      background: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .logo-container svg {
+      height: 34px;
+      width: auto;
+      display: block;
+    }
+
+    .brand-title h1 {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-title p {
+      font-size: 0.77rem;
+      color: var(--ssays-cyan);
+      font-weight: 600;
+    }
+
+    .pill-file {
+      background: rgba(14, 34, 27, 0.85);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-file .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--ssays-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--ssays-cyan);
+    }
+
+    .dashboard-body {
+      padding: 20px 28px;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Zona Drag & Drop con estilo SSAYS */
+    .dropzone-container {
+      background: var(--card-bg);
+      border: 2px dashed var(--ssays-green-light);
+      border-radius: 10px;
+      padding: 14px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .dropzone-container:hover, .dropzone-container.dragover {
+      background: #112d23;
+      border-color: var(--ssays-cyan);
+      box-shadow: 0 0 16px rgba(0, 189, 242, 0.25);
+    }
+
+    .dropzone-text {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .dropzone-icon {
+      font-size: 26px;
+      background: rgba(0, 189, 242, 0.12);
+      border: 1px solid rgba(0, 189, 242, 0.3);
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ssays-cyan);
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .btn-ssays {
+      background: linear-gradient(135deg, var(--ssays-green-light) 0%, var(--ssays-green) 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 104, 55, 0.35);
+    }
+    .btn-ssays:hover {
+      background: linear-gradient(135deg, #00aa48 0%, var(--ssays-green-light) 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-dark {
+      background: #122b22;
+      color: #e2e8f0;
+      border: 1px solid var(--card-border);
+    }
+    .btn-dark:hover {
+      background: #183a2e;
+      border-color: var(--ssays-green-light);
+    }
+
+    /* Banner Informativo */
+    .client-alert-banner {
+      background: linear-gradient(90deg, rgba(14, 34, 27, 0.95) 0%, rgba(10, 24, 19, 0.95) 100%);
+      border-left: 4px solid var(--ssays-cyan);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      line-height: 1.4;
+      box-shadow: var(--shadow);
+    }
+
+    .client-alert-banner strong {
+      color: var(--ssays-cyan);
+    }
+
+    /* Estructura Modular de Filtros */
+    .filters-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .filter-row-top {
+      display: grid;
+      grid-template-columns: 1.3fr 1.3fr 1.8fr 1.8fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .filter-row-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .filter-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-block label {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--ssays-cyan);
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .filter-block label span.sub-info {
+      color: var(--text-muted);
+      font-weight: normal;
+      font-size: 0.7rem;
+    }
+
+    .form-control {
+      background: #081711;
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--ssays-cyan);
+      box-shadow: 0 0 8px rgba(0, 189, 242, 0.3);
+    }
+
+    /* Selector de Periodo */
+    .date-range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .date-range-inputs span {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .date-range-inputs input[type="date"] {
+      background: #081711;
+      border: 1px solid var(--card-border);
+      color: #f8fafc;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+      width: 100%;
+    }
+
+    .date-range-inputs input[type="date"]:focus {
+      border-color: var(--ssays-cyan);
+    }
+
+    /* Chips / Checkboxes Interactivos */
+    .chips-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #081711;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .chip-item:hover {
+      border-color: var(--ssays-green-light);
+      background: #0e291e;
+    }
+
+    .chip-item.active {
+      background: rgba(0, 150, 64, 0.22);
+      border-color: var(--ssays-green-light);
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    .chip-item .chk-icon {
+      width: 14px;
+      height: 14px;
+      border: 1px solid #335948;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .chip-item.active .chk-icon {
+      background-color: var(--ssays-green-light);
+      border-color: var(--ssays-green-light);
+      color: #ffffff;
+    }
+
+    .chip-actions {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .link-action {
+      font-size: 0.68rem;
+      color: var(--ssays-cyan);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .link-action:hover { color: #ffffff; }
+
+    /* Títulos de Grupo de KPIs */
+    .section-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 800;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--card-border) 0%, transparent 100%);
+    }
+
+    /* Tarjetas KPI */
+    .kpis-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+    }
+
+    .kpis-grid-rotacion {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .kpi-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .kpi-box:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 189, 242, 0.4);
+    }
+
+    .kpi-box::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .kpi-box.accent-blue::after { background: var(--ssays-cyan); }
+    .kpi-box.accent-green::after { background: var(--ssays-green-light); }
+    .kpi-box.accent-rose::after { background: var(--accent-rose); }
+    .kpi-box.accent-indigo::after { background: #38bdf8; }
+    .kpi-box.accent-amber::after { background: var(--accent-amber); }
+    .kpi-box.accent-cyan::after { background: var(--ssays-cyan); }
+    .kpi-box.accent-purple::after { background: var(--accent-purple); }
+
+    .kpi-box .label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .kpi-box .val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 6px 0;
+      color: #ffffff;
+    }
+
+    .kpi-box .foot {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .tag-ok { background: rgba(0, 150, 64, 0.25); color: #4ade80; border: 1px solid rgba(0, 150, 64, 0.4); }
+    .tag-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .tag-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    /* Gráficos */
+    .grid-2x1 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-1x1 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .chart-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .chart-head h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .chart-wrap {
+      position: relative;
+      flex-grow: 1;
+      min-height: 280px;
+      width: 100%;
+    }
+
+    /* Tabla */
+    .table-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .table-head-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .table-scroll {
+      max-height: 420px;
+      overflow-y: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    thead th {
+      background: #081711;
+      color: var(--ssays-cyan);
+      font-weight: 700;
+      padding: 10px 12px;
+      position: sticky;
+      top: 0;
+      border-bottom: 2px solid var(--card-border);
+      z-index: 2;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(22, 56, 44, 0.6);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: rgba(0, 189, 242, 0.08); }
+    tbody td { padding: 9px 12px; color: #e2e8f0; white-space: nowrap; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+
+    @media (max-width: 1400px) {
+      .kpis-grid { grid-template-columns: repeat(3, 1fr); }
+      .kpis-grid-rotacion { grid-template-columns: repeat(3, 1fr); }
+      .filter-row-top { grid-template-columns: 1fr; }
+      .filter-row-bottom { grid-template-columns: 1fr; }
+      .grid-2x1, .grid-1x1 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 800px) {
+      .kpis-grid, .kpis-grid-rotacion { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="command-header">
+    <div class="brand-group">
+      <!-- Isotipo / Logotipo Vectorial de SSAYS -->
+      <div class="logo-container">
+        <svg viewBox="0 0 350 90" xmlns="http://www.w3.org/2000/svg">
+          <!-- S superior verde -->
+          <path d="M15 15 C35 12, 60 12, 75 15 C85 17, 85 30, 75 33 C55 35, 30 35, 15 33 C5 31, 5 17, 15 15 Z" fill="#006837" />
+          <!-- Cinta central celeste -->
+          <path d="M10 40 C35 38, 55 38, 80 40 C85 41, 85 51, 80 52 C55 54, 35 54, 10 52 C5 51, 5 41, 10 40 Z" fill="#00BDF2" />
+          <!-- S inferior verde -->
+          <path d="M15 59 C30 57, 55 57, 75 59 C85 61, 85 75, 75 77 C60 80, 35 80, 15 77 C5 75, 5 61, 15 59 Z" fill="#006837" />
+          <!-- Texto SSAYS -->
+          <text x="95" y="65" font-family="'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="52" fill="#006837" letter-spacing="3">SSAYS</text>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>Centro de Control de Dotación Contractual (TR) & Rotación</h1>
+        <p>Sistema Integrado de Monitoreo Operativo &bull; Cobertura Efectiva, Altas, Bajas y Nivel de Servicio</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="pill-file">
+        <span class="status-dot"></span>
+        <span id="activeFileTag">Esperando archivo...</span>
+      </div>
+      <button class="btn btn-dark" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </header>
+
+  <main class="dashboard-body">
+
+    <!-- Subida de Excel -->
+    <div class="dropzone-container" id="dropZone" onclick="document.getElementById('fileUploadInput').click()">
+      <input type="file" id="fileUploadInput" accept=".xlsx, .xlsm, .xls" style="display: none;" onchange="handleNewExcel(event)">
+      <div class="dropzone-text">
+        <div class="dropzone-icon">📥</div>
+        <div>
+          <h3 style="font-size:0.95rem; font-weight:700; color:#f1f5f9;">Cargar archivo Excel / Tareo (.xlsx / .xlsm)</h3>
+          <p style="font-size:0.8rem; color:var(--text-muted);">Arrastra o haz clic para cargar. Se leerán automáticamente TR, asistencias, altas (Fechain) y bajas (Fechaout).</p>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-ssays" onclick="event.stopPropagation(); document.getElementById('fileUploadInput').click()">
+          📁 Cargar Archivo
+        </button>
+      </div>
+    </div>
+
+    <!-- Banner Informativo -->
+    <div class="client-alert-banner">
+      <div>
+        💡 <strong>Auditoría Contractual y Rotación de Personal SSAYS:</strong> 
+        La <em>Cobertura Efectiva</em> no compensa faltantes con apoyos de otros turnos. A su vez, el módulo de rotación calcula las <em>Nuevas Altas</em> y <em>Bajas</em> para sustentar ante el cliente las variaciones de dotación.
+      </div>
+      <span style="font-size:0.75rem; color:#94a3b8;">Rotación (%) = (Bajas / Dotación Promedio) × 100</span>
+    </div>
+
+    <!-- Segmentadores: Cascada Unidad -> Local, Rango de Fecha y Checkboxes para Turno y Cargo -->
+    <section class="filters-section">
+      <!-- Fila 1: Filtros de Selección y Jerarquía -->
+      <div class="filter-row-top">
+        <!-- 1. Desplegable de Unidad -->
+        <div class="filter-block">
+          <label for="selUnidad">🏢 Unidad de Negocio</label>
+          <select id="selUnidad" class="form-control" onchange="onUnidadChange()">
+            <option value="ALL">Todas las Unidades</option>
+          </select>
+        </div>
+
+        <!-- 2. Desplegable de Local (Filtrado dependiente de la Unidad) -->
+        <div class="filter-block">
+          <label for="selLocal">📍 Local / Sede <span class="sub-info" id="localDependantLabel">(Asociado a Unidad)</span></label>
+          <select id="selLocal" class="form-control" onchange="recalculateDashboard()">
+            <option value="ALL">Todos los Locales</option>
+          </select>
+        </div>
+
+        <!-- 3. Selector de Periodo (Rango Desde - Hasta) -->
+        <div class="filter-block">
+          <label>📅 Selector de Periodo <span class="sub-info" id="lblPeriodoInfo">(Rango de fechas)</span></label>
+          <div class="date-range-inputs">
+            <span>Desde:</span>
+            <input type="date" id="fechaDesde" onchange="recalculateDashboard()">
+            <span>Hasta:</span>
+            <input type="date" id="fechaHasta" onchange="recalculateDashboard()">
+          </div>
+        </div>
+
+        <!-- 4. Buscador Libre -->
+        <div class="filter-block">
+          <label for="searchTxt">🔍 Buscador Libre</label>
+          <input type="text" id="searchTxt" class="form-control" placeholder="Buscar por palabra clave..." oninput="recalculateDashboard()">
+        </div>
+
+        <!-- Botón Limpiar -->
+        <div class="filter-block" style="justify-content: flex-end;">
+          <label>&nbsp;</label>
+          <button class="btn btn-dark" onclick="clearFilters()">🧹 Limpiar Todo</button>
+        </div>
+      </div>
+
+      <!-- Fila 2: Selección Múltiple con Checkboxes/Chips para Turno y Cargo -->
+      <div class="filter-row-bottom">
+        <!-- Selección de Turnos -->
+        <div class="filter-block">
+          <label>
+            <span>⏱️ Turnos Seleccionados</span>
+            <span class="chip-actions">
+              <span class="link-action" onclick="toggleAllChips('turno', true)">Marcar todos</span> | 
+              <span class="link-action" onclick="toggleAllChips('turno', false)">Desmarcar</span>
+            </span>
+          </label>
+          <div class="chips-group" id="turnoChipsContainer">
+            <!-- Chips dinámicos -->
+          </div>
+        </div>
+
+        <!-- Selección de Cargos -->
+        <div class="filter-block">
+          <label>
+            <span>👔 Cargos Seleccionados (Prioriza Supervisor / Operario)</span>
+            <span class="chip-actions">
+              <span class="link-action" onclick="toggleAllChips('cargo', true)">Marcar todos</span> | 
+              <span class="link-action" onclick="toggleAllChips('cargo', false)">Desmarcar</span>
+            </span>
+          </label>
+          <div class="chips-group" id="cargoChipsContainer">
+            <!-- Chips dinámicos -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOQUE 1: KPIs DE COBERTURA CONTRACTUAL -->
+    <div class="section-title">📊 1. Control de Dotación Contractual (TR)</div>
+    <section class="kpis-grid">
+      <div class="kpi-box accent-blue">
+        <div class="label">Meta Contractual (TR)</div>
+        <div class="val" id="kpiTR">0</div>
+        <div class="foot"><span>Total exigido según contrato</span></div>
+      </div>
+
+      <div class="kpi-box accent-green">
+        <div class="label">Asistencia Efectiva Válida</div>
+        <div class="val" id="kpiAsistEfectiva">0</div>
+        <div class="foot"><span id="kpiAsistBrutaSub">Total asistencias: 0</span></div>
+      </div>
+
+      <div class="kpi-box accent-rose">
+        <div class="label">Personal por Coberturar</div>
+        <div class="val" id="kpiFaltante">0</div>
+        <div class="foot"><span>Déficit estricto acumulado</span></div>
+      </div>
+
+      <div class="kpi-box accent-cyan">
+        <div class="label">Apoyos / Sobre-dotación</div>
+        <div class="val" id="kpiSuperavit">+0</div>
+        <div class="foot"><span>Asistencias sobre la meta diaria</span></div>
+      </div>
+
+      <div class="kpi-box accent-green">
+        <div class="label">% Cobertura Efectiva TR</div>
+        <div class="val" id="kpiCumplimientoEfectivo">0%</div>
+        <div class="foot" id="kpiCumpBadge"><span class="badge-tag tag-ok">Óptimo</span></div>
+      </div>
+
+      <div class="kpi-box accent-amber">
+        <div class="label">% Nivel de Servicio</div>
+        <div class="val" id="kpiNivelServicio">0%</div>
+        <div class="foot"><span id="kpiQuiebresSub">0 turnos con quiebre</span></div>
+      </div>
+    </section>
+
+    <!-- BLOQUE 2: KPIs DE ROTACIÓN DE PERSONAL -->
+    <div class="section-title">👥 2. Indicadores de Rotación de Personal (Altas, Bajas y Rotación)</div>
+    <section class="kpis-grid-rotacion">
+      <!-- KPI R1: Dotación Promedio Diaria -->
+      <div class="kpi-box accent-blue">
+        <div class="label">Dotación Diaria Promedio</div>
+        <div class="val" id="kpiDotacionPromedio">0</div>
+        <div class="foot"><span>Promedio de personal activo / día</span></div>
+      </div>
+
+      <!-- KPI R2: Nuevas Altas (Ingresos) -->
+      <div class="kpi-box accent-green">
+        <div class="label">Nuevas Altas (Ingresos)</div>
+        <div class="val" id="kpiTotalAltas">+0</div>
+        <div class="foot"><span>Incorporaciones efectivas (FechaIn)</span></div>
+      </div>
+
+      <!-- KPI R3: Bajas Totales (Salidas) -->
+      <div class="kpi-box accent-rose">
+        <div class="label">Bajas Totales (Salidas)</div>
+        <div class="val" id="kpiTotalBajas">-0</div>
+        <div class="foot"><span>Ceses / desvinculaciones (FechaOut)</span></div>
+      </div>
+
+      <!-- KPI R4: Tasa de Rotación Mensual -->
+      <div class="kpi-box accent-cyan">
+        <div class="label">Tasa de Rotación del Periodo</div>
+        <div class="val" id="kpiTasaRotacion">0%</div>
+        <div class="foot"><span id="kpiRotacionFormula">Bajas / Dotación Media</span></div>
+      </div>
+
+      <!-- KPI R5: Balance Neto de Personal -->
+      <div class="kpi-box accent-green">
+        <div class="label">Balance Neto de Personal</div>
+        <div class="val" id="kpiBalanceNeto">0</div>
+        <div class="foot"><span id="kpiBalanceSub">Altas vs Bajas en periodo</span></div>
+      </div>
+    </section>
+
+    <!-- Fila Gráficos 1: Cobertura por Local y Faltante por Cargo -->
+    <div class="grid-2x1">
+      <div class="chart-box">
+        <div class="chart-head">
+          <h4>📊 Meta Contractual (TR) vs. Cobertura Efectiva vs. Apoyos por Local</h4>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartLocalesTR"></canvas>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-head">
+          <h4>🍩 Distribución de Personal Faltante por Cargo</h4>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartCargoFaltante"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila Gráficos 2: Evolución Diaria y Rotación de Personal -->
+    <div class="grid-1x1">
+      <div class="chart-box">
+        <div class="chart-head">
+          <h4>📈 Evolución Diaria: Meta TR, Cobertura Efectiva y Faltantes Netos</h4>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartTimelineTR"></canvas>
+        </div>
+      </div>
+      <!-- Gráfico de Rotación -->
+      <div class="chart-box">
+        <div class="chart-head">
+          <h4>🔄 Dinámica de Rotación: Nuevas Altas vs. Salidas por Día</h4>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartRotacionFlujo"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <section class="table-section">
+      <div class="table-head-bar">
+        <div>
+          <strong style="font-size:0.92rem; color:#f1f5f9;">Detalle Operativo Diario (Pestaña RESUMEN_TR)</strong>
+          <span id="lblCountTable" style="font-size:0.75rem; color:#94a3b8; margin-left:8px;">(0 registros)</span>
+        </div>
+        <button class="btn btn-ssays" onclick="exportDataToCSV()">📥 Exportar a CSV</button>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Local</th>
+              <th>Unidad</th>
+              <th>Turno</th>
+              <th>Cargo</th>
+              <th>Descanso</th>
+              <th class="text-right">TR (Meta)</th>
+              <th class="text-right">Cantidad (Asist.)</th>
+              <th class="text-right">Efectiva</th>
+              <th class="text-right">Por Coberturar</th>
+              <th class="text-right">Superávit</th>
+              <th class="text-center" style="color:var(--ssays-green-light);">Altas (In)</th>
+              <th class="text-center" style="color:var(--accent-rose);">Bajas (Out)</th>
+              <th class="text-center">% Cobertura</th>
+              <th class="text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody">
+            <!-- Rellenado por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let activeRecords = [];
+
+    // Conjuntos de filtros activos de checkbox
+    let selectedTurnos = new Set();
+    let selectedCargos = new Set();
+
+    // Rango global de fechas
+    let minDataDate = '';
+    let maxDataDate = '';
+
+    // Instancias de Chart.js
+    let chartLocal = null;
+    let chartCargo = null;
+    let chartTime = null;
+    let chartRotacion = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupDnD();
+      recalculateDashboard();
+    });
+
+    function setupDnD() {
+      const zone = document.getElementById('dropZone');
+      ['dragenter', 'dragover'].forEach(evt => {
+        zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('dragover'); }, false);
+      });
+      ['dragleave', 'drop'].forEach(evt => {
+        zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('dragover'); }, false);
+      });
+      zone.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) parseUploadedExcel(files[0]);
+      });
+    }
+
+    function handleNewExcel(event) {
+      const file = event.target.files[0];
+      if (file) parseUploadedExcel(file);
+    }
+
+    // Procesamiento en caliente del Excel
+    function parseUploadedExcel(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, {type: 'array', cellDates: true});
+
+          // Buscar la pestaña RESUMEN_TR
+          let targetSheetName = wb.SheetNames.find(s => s.toUpperCase().includes('RESUMEN_TR'));
+          if (!targetSheetName) {
+            targetSheetName = wb.SheetNames.find(s => s.toUpperCase().includes('RESUMEN')) || wb.SheetNames[0];
+          }
+
+          const sheet = wb.Sheets[targetSheetName];
+          const raw = XLSX.utils.sheet_to_json(sheet);
+
+          const newRows = [];
+          raw.forEach((r, idx) => {
+            const local = String(r['Local'] || r['LOCAL'] || '').replace('\n', '').trim();
+            const unidad = String(r['Unidad'] || r['UNIDAD'] || '').trim();
+            const turno = String(r['Turno'] || r['TURNO'] || '').trim();
+            const cargo = String(r['Cargo'] || r['CARGO'] || '').trim();
+            const descanso = String(r['Descanso'] || r['DESCANSO'] || '').trim();
+
+            let fechaStr = '';
+            const fVal = r['Fecha'] || r['FECHA'];
+            if (fVal) {
+              if (fVal instanceof Date) fechaStr = fVal.toISOString().split('T')[0];
+              else fechaStr = String(fVal).substring(0, 10);
+            }
+
+            const trVal = parseFloat(r['TR'] || 0) || 0;
+            const cantVal = parseFloat(r['Cantidad'] || r['CANTIDAD'] || 0) || 0;
+            
+            // Campos de Rotación: Altas y Bajas
+            const altasVal = parseFloat(r['Cant Fechain'] || r['Cant_Fechain'] || r['Fechain'] || 0) || 0;
+            const bajasVal = parseFloat(r['Cant Fechaout'] || r['Cant_Fechaout'] || r['Fechaout'] || 0) || 0;
+
+            // Cálculos rigurosos de cobertura contractual
+            const efectivaVal = Math.min(cantVal, trVal);
+            const deficitVal = Math.max(trVal - cantVal, 0);
+            const superavitVal = Math.max(cantVal - trVal, 0);
+            const cumpVal = trVal > 0 ? Math.round((efectivaVal / trVal) * 1000) / 10 : 100.0;
+
+            if (local || fechaStr) {
+              newRows.push({
+                id: idx + 1,
+                unidad: unidad || 'NO ESPECIFICADO',
+                local: local || 'NO ESPECIFICADO',
+                turno: turno || 'M',
+                cargo: cargo || 'GENERAL',
+                tr: trVal,
+                descanso: descanso,
+                fecha: fechaStr,
+                cantidad: cantVal,
+                efectiva: efectivaVal,
+                faltante: deficitVal,
+                superavit: superavitVal,
+                altas: altasVal,
+                bajas: bajasVal,
+                cumplimiento: cumpVal
+              });
+            }
+          });
+
+          if (newRows.length > 0) {
+            activeRecords = newRows;
+            document.getElementById('activeFileTag').textContent = `Activo: ${file.name} (${newRows.length} filas)`;
+            initDropdownsAndPeriod();
+            recalculateDashboard();
+            alert(`¡Carga exitosa! Se procesaron ${newRows.length} registros con identidad visual SSAYS.`);
+          } else {
+            alert('No se encontraron registros válidos en la hoja ' + targetSheetName);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Error al leer el archivo Excel: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function initDropdownsAndPeriod() {
+      const uniSel = document.getElementById('selUnidad');
+      const unidades = Array.from(new Set(activeRecords.map(r => r.unidad))).filter(Boolean).sort();
+      uniSel.innerHTML = '<option value="ALL">Todas las Unidades</option>' + unidades.map(u => `<option value="${u}">${u}</option>`).join('');
+
+      updateLocalesDropdown();
+
+      const fechas = Array.from(new Set(activeRecords.map(r => r.fecha))).filter(Boolean).sort();
+      if (fechas.length > 0) {
+        minDataDate = fechas[0];
+        maxDataDate = fechas[fechas.length - 1];
+        
+        const fDesde = document.getElementById('fechaDesde');
+        const fHasta = document.getElementById('fechaHasta');
+        
+        fDesde.min = minDataDate;
+        fDesde.max = maxDataDate;
+        fDesde.value = minDataDate;
+
+        fHasta.min = minDataDate;
+        fHasta.max = maxDataDate;
+        fHasta.value = maxDataDate;
+
+        document.getElementById('lblPeriodoInfo').textContent = `(${minDataDate} al ${maxDataDate})`;
+      }
+
+      const turnos = Array.from(new Set(activeRecords.map(r => r.turno))).filter(Boolean).sort();
+      selectedTurnos = new Set(turnos);
+      renderChips('turno', turnos, selectedTurnos, document.getElementById('turnoChipsContainer'));
+
+      const cargos = Array.from(new Set(activeRecords.map(r => r.cargo))).filter(Boolean).sort();
+      selectedCargos = new Set(cargos);
+      renderChips('cargo', cargos, selectedCargos, document.getElementById('cargoChipsContainer'));
+    }
+
+    function renderChips(type, items, selectedSet, container) {
+      container.innerHTML = '';
+      items.forEach(item => {
+        const isChecked = selectedSet.has(item);
+        const chip = document.createElement('div');
+        chip.className = `chip-item ${isChecked ? 'active' : ''}`;
+        chip.innerHTML = `
+          <span class="chk-icon">${isChecked ? '✓' : ''}</span>
+          <span>${item}</span>
+        `;
+        chip.onclick = () => {
+          if (selectedSet.has(item)) {
+            selectedSet.delete(item);
+          } else {
+            selectedSet.add(item);
+          }
+          chip.classList.toggle('active', selectedSet.has(item));
+          chip.querySelector('.chk-icon').textContent = selectedSet.has(item) ? '✓' : '';
+          recalculateDashboard();
+        };
+        container.appendChild(chip);
+      });
+    }
+
+    function toggleAllChips(type, selectAll) {
+      if (type === 'turno') {
+        const turnos = Array.from(new Set(activeRecords.map(r => r.turno))).filter(Boolean);
+        selectedTurnos = selectAll ? new Set(turnos) : new Set();
+        renderChips('turno', turnos.sort(), selectedTurnos, document.getElementById('turnoChipsContainer'));
+      } else if (type === 'cargo') {
+        const cargos = Array.from(new Set(activeRecords.map(r => r.cargo))).filter(Boolean);
+        selectedCargos = selectAll ? new Set(cargos) : new Set();
+        renderChips('cargo', cargos.sort(), selectedCargos, document.getElementById('cargoChipsContainer'));
+      }
+      recalculateDashboard();
+    }
+
+    function onUnidadChange() {
+      updateLocalesDropdown();
+      recalculateDashboard();
+    }
+
+    function updateLocalesDropdown() {
+      const selectedUnidad = document.getElementById('selUnidad').value;
+      const locSel = document.getElementById('selLocal');
+
+      let locales = [];
+      if (selectedUnidad === 'ALL') {
+        locales = Array.from(new Set(activeRecords.map(r => r.local))).filter(Boolean).sort();
+        document.getElementById('localDependantLabel').textContent = '(Todos los locales)';
+      } else {
+        locales = Array.from(new Set(activeRecords.filter(r => r.unidad === selectedUnidad).map(r => r.local))).filter(Boolean).sort();
+        document.getElementById('localDependantLabel').textContent = `(Asociados a: ${selectedUnidad})`;
+      }
+
+      locSel.innerHTML = '<option value="ALL">Todos los Locales</option>' + locales.map(l => `<option value="${l}">${l}</option>`).join('');
+    }
+
+    function clearFilters() {
+      document.getElementById('searchTxt').value = '';
+      document.getElementById('selUnidad').value = 'ALL';
+      updateLocalesDropdown();
+
+      if (minDataDate && maxDataDate) {
+        document.getElementById('fechaDesde').value = minDataDate;
+        document.getElementById('fechaHasta').value = maxDataDate;
+      }
+
+      toggleAllChips('turno', true);
+      toggleAllChips('cargo', true);
+      recalculateDashboard();
+    }
+
+    function recalculateDashboard() {
+      const search = document.getElementById('searchTxt').value.toLowerCase().trim();
+      const unidad = document.getElementById('selUnidad').value;
+      const local = document.getElementById('selLocal').value;
+      const fDesde = document.getElementById('fechaDesde').value;
+      const fHasta = document.getElementById('fechaHasta').value;
+
+      const filtered = activeRecords.filter(r => {
+        if (unidad !== 'ALL' && r.unidad !== unidad) return false;
+        if (local !== 'ALL' && r.local !== local) return false;
+        
+        if (fDesde && r.fecha && r.fecha < fDesde) return false;
+        if (fHasta && r.fecha && r.fecha > fHasta) return false;
+
+        if (selectedTurnos.size > 0 && !selectedTurnos.has(r.turno)) return false;
+        if (selectedTurnos.size === 0) return false;
+
+        if (selectedCargos.size > 0 && !selectedCargos.has(r.cargo)) return false;
+        if (selectedCargos.size === 0) return false;
+
+        if (search) {
+          const txt = (r.local + ' ' + r.unidad + ' ' + r.cargo + ' ' + r.turno + ' ' + r.fecha).toLowerCase();
+          if (!txt.includes(search)) return false;
+        }
+        return true;
+      });
+
+      renderKPIs(filtered);
+      renderCharts(filtered);
+      renderTable(filtered);
+    }
+
+    function renderKPIs(data) {
+      const totalTR = data.reduce((a, b) => a + b.tr, 0);
+      const totalCantBruta = data.reduce((a, b) => a + b.cantidad, 0);
+      const totalEfectiva = data.reduce((a, b) => a + b.efectiva, 0);
+      const totalFaltante = data.reduce((a, b) => a + b.faltante, 0);
+      const totalSuperavit = data.reduce((a, b) => a + b.superavit, 0);
+
+      const pctEfectivo = totalTR > 0 ? Math.round((totalEfectiva / totalTR) * 1000) / 10 : 100.0;
+      
+      const turnosConDeficit = data.filter(r => r.faltante > 0).length;
+      const totalTurnos = data.length;
+      const pctNivelServicio = totalTurnos > 0 ? Math.round(((totalTurnos - turnosConDeficit) / totalTurnos) * 1000) / 10 : 100.0;
+
+      document.getElementById('kpiTR').textContent = totalTR.toLocaleString();
+      document.getElementById('kpiAsistEfectiva').textContent = totalEfectiva.toLocaleString();
+      document.getElementById('kpiAsistBrutaSub').textContent = `Total asistencias: ${totalCantBruta.toLocaleString()}`;
+      
+      document.getElementById('kpiFaltante').textContent = totalFaltante.toLocaleString();
+      document.getElementById('kpiSuperavit').textContent = `+${totalSuperavit.toLocaleString()}`;
+      
+      document.getElementById('kpiCumplimientoEfectivo').textContent = pctEfectivo + '%';
+      document.getElementById('kpiNivelServicio').textContent = pctNivelServicio + '%';
+      document.getElementById('kpiQuiebresSub').textContent = `${turnosConDeficit} de ${totalTurnos} turnos con falta`;
+
+      const badge = document.getElementById('kpiCumpBadge');
+      if (pctEfectivo >= 98) {
+        badge.innerHTML = '<span class="badge-tag tag-ok">Meta Cumplida (≥98%)</span>';
+      } else if (pctEfectivo >= 92) {
+        badge.innerHTML = '<span class="badge-tag tag-warn">Alerta Leve (92% - 97%)</span>';
+      } else {
+        badge.innerHTML = '<span class="badge-tag tag-danger">Déficit Crítico (&lt;92%)</span>';
+      }
+
+      // Módulo Rotación
+      const totalAltas = data.reduce((a, b) => a + b.altas, 0);
+      const totalBajas = data.reduce((a, b) => a + b.bajas, 0);
+      const balanceNeto = totalAltas - totalBajas;
+
+      const uniqueDays = new Set(data.map(r => r.fecha)).size || 1;
+      const dotacionPromedioDiaria = Math.round((totalCantBruta / uniqueDays) * 10) / 10;
+
+      const tasaRotacion = dotacionPromedioDiaria > 0 ? Math.round((totalBajas / dotacionPromedioDiaria) * 1000) / 10 : 0.0;
+
+      document.getElementById('kpiDotacionPromedio').textContent = dotacionPromedioDiaria.toLocaleString();
+      document.getElementById('kpiTotalAltas').textContent = `+${totalAltas.toLocaleString()}`;
+      document.getElementById('kpiTotalBajas').textContent = `-${totalBajas.toLocaleString()}`;
+      document.getElementById('kpiTasaRotacion').textContent = tasaRotacion + '%';
+      
+      const balEl = document.getElementById('kpiBalanceNeto');
+      balEl.textContent = (balanceNeto >= 0 ? '+' : '') + balanceNeto.toLocaleString();
+      balEl.style.color = balanceNeto < 0 ? '#ef4444' : (balanceNeto > 0 ? '#4ade80' : '#fff');
+
+      document.getElementById('kpiBalanceSub').textContent = balanceNeto >= 0 ? 'Crecimiento neto' : 'Pérdida neta de plantilla';
+    }
+
+    function renderCharts(data) {
+      // 1. Barras por Local (Colores SSAYS: Verde Corporativo, Verde Claro, Cyan)
+      const localMap = {};
+      data.forEach(r => {
+        if (!localMap[r.local]) localMap[r.local] = { tr: 0, efectiva: 0, faltante: 0, superavit: 0, altas: 0, bajas: 0 };
+        localMap[r.local].tr += r.tr;
+        localMap[r.local].efectiva += r.efectiva;
+        localMap[r.local].faltante += r.faltante;
+        localMap[r.local].superavit += r.superavit;
+        localMap[r.local].altas += r.altas;
+        localMap[r.local].bajas += r.bajas;
+      });
+
+      const localKeys = Object.keys(localMap).sort((a,b) => localMap[b].tr - localMap[a].tr).slice(0, 10);
+      const labelsLocal = localKeys.map(k => k.replace('ECOBESA - ', '').replace('PLANTA ', ''));
+      const trLocal = localKeys.map(k => localMap[k].tr);
+      const efectivaLocal = localKeys.map(k => localMap[k].efectiva);
+      const superavitLocal = localKeys.map(k => localMap[k].superavit);
+
+      if (chartLocal) chartLocal.destroy();
+      const ctx1 = document.getElementById('chartLocalesTR').getContext('2d');
+      chartLocal = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: labelsLocal,
+          datasets: [
+            { label: 'Meta TR', data: trLocal, backgroundColor: '#00bdf2', borderRadius: 4 },
+            { label: 'Cobertura Efectiva', data: efectivaLocal, backgroundColor: '#009640', borderRadius: 4 },
+            { label: 'Apoyo / Superávit', data: superavitLocal, backgroundColor: '#059669', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#cbd5e1' } } },
+          scales: {
+            y: { grid: { color: '#16382c' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // 2. Dona por Cargo
+      const cargoMap = {};
+      data.forEach(r => {
+        if (!cargoMap[r.cargo]) cargoMap[r.cargo] = 0;
+        cargoMap[r.cargo] += r.faltante;
+      });
+
+      const cargoLabels = Object.keys(cargoMap);
+      const cargoValues = cargoLabels.map(c => cargoMap[c]);
+
+      if (chartCargo) chartCargo.destroy();
+      const ctx2 = document.getElementById('chartCargoFaltante').getContext('2d');
+      chartCargo = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: cargoLabels,
+          datasets: [{
+            data: cargoValues.length > 0 && cargoValues.some(v => v > 0) ? cargoValues : [1],
+            backgroundColor: ['#ef4444', '#f59e0b', '#00bdf2', '#009640', '#8b5cf6', '#10b981'],
+            borderWidth: 2,
+            borderColor: '#0e221b'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } },
+          cutout: '65%'
+        }
+      });
+
+      // 3. Línea Temporal Diaria
+      const dateMap = {};
+      data.forEach(r => {
+        if (!r.fecha) return;
+        if (!dateMap[r.fecha]) dateMap[r.fecha] = { tr: 0, efectiva: 0, falt: 0, altas: 0, bajas: 0 };
+        dateMap[r.fecha].tr += r.tr;
+        dateMap[r.fecha].efectiva += r.efectiva;
+        dateMap[r.fecha].falt += r.faltante;
+        dateMap[r.fecha].altas += r.altas;
+        dateMap[r.fecha].bajas += r.bajas;
+      });
+
+      const dateKeys = Object.keys(dateMap).sort();
+      const dateTR = dateKeys.map(d => dateMap[d].tr);
+      const dateEfectiva = dateKeys.map(d => dateMap[d].efectiva);
+      const dateFalt = dateKeys.map(d => dateMap[d].falt);
+      const dateAltas = dateKeys.map(d => dateMap[d].altas);
+      const dateBajas = dateKeys.map(d => dateMap[d].bajas);
+
+      if (chartTime) chartTime.destroy();
+      const ctx3 = document.getElementById('chartTimelineTR').getContext('2d');
+      chartTime = new Chart(ctx3, {
+        type: 'line',
+        data: {
+          labels: dateKeys.map(d => d.substring(5)),
+          datasets: [
+            { label: 'Meta TR', data: dateTR, borderColor: '#00bdf2', borderDash: [4, 4], fill: false, tension: 0.1 },
+            { label: 'Cobertura Efectiva', data: dateEfectiva, borderColor: '#009640', backgroundColor: 'rgba(0, 150, 64, 0.12)', fill: true, tension: 0.2 },
+            { label: 'Personal por Coberturar', data: dateFalt, borderColor: '#ef4444', fill: false, tension: 0.2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#cbd5e1' } } },
+          scales: {
+            y: { grid: { color: '#16382c' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // 4. Gráfico de Rotación: Altas vs Bajas (Verde SSAYS vs Rojo alerta)
+      if (chartRotacion) chartRotacion.destroy();
+      const ctx4 = document.getElementById('chartRotacionFlujo').getContext('2d');
+      chartRotacion = new Chart(ctx4, {
+        type: 'bar',
+        data: {
+          labels: dateKeys.map(d => d.substring(5)),
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Nuevas Altas (Ingresos)',
+              data: dateAltas,
+              backgroundColor: '#009640',
+              borderRadius: 3
+            },
+            {
+              type: 'bar',
+              label: 'Bajas Totales (Salidas)',
+              data: dateBajas,
+              backgroundColor: '#ef4444',
+              borderRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1' } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return `${ctx.dataset.label}: ${ctx.raw} personas`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              grid: { color: '#16382c' },
+              ticks: { color: '#94a3b8', stepSize: 1 }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('tblBody');
+      document.getElementById('lblCountTable').textContent = `(Mostrando ${data.length} de ${activeRecords.length} registros)`;
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="16" style="text-align:center; padding:24px; color:#64748b;">No se encontraron registros para los filtros y periodo seleccionados.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.slice(0, 300).map((r, i) => {
+        let statusTag = '<span class="badge-tag tag-ok">Cumplido</span>';
+        if (r.faltante > 0) {
+          statusTag = '<span class="badge-tag tag-danger">Con Falta</span>';
+        } else if (r.superavit > 0) {
+          statusTag = '<span class="badge-tag tag-warn">Apoyo Adic.</span>';
+        }
+
+        return `
+          <tr>
+            <td>${r.id}</td>
+            <td><strong>${r.fecha || '-'}</strong></td>
+            <td>${r.local}</td>
+            <td>${r.unidad}</td>
+            <td><span style="background:#081711; padding:2px 6px; border-radius:4px; font-size:0.75rem; border:1px solid var(--card-border);">${r.turno}</span></td>
+            <td>${r.cargo}</td>
+            <td>${r.descanso || '-'}</td>
+            <td class="text-right" style="font-weight:700; color:#00bdf2;">${r.tr}</td>
+            <td class="text-right" style="font-weight:700; color:#fff;">${r.cantidad}</td>
+            <td class="text-right" style="font-weight:700; color:#4ade80;">${r.efectiva}</td>
+            <td class="text-right" style="font-weight:800; color:${r.faltante > 0 ? '#ef4444' : '#94a3b8'};">${r.faltante > 0 ? '-' + r.faltante : '0'}</td>
+            <td class="text-right" style="font-weight:700; color:${r.superavit > 0 ? '#059669' : '#94a3b8'};">${r.superavit > 0 ? '+' + r.superavit : '0'}</td>
+            <td class="text-center font-weight-bold" style="color:${r.altas > 0 ? '#4ade80' : '#64748b'};">${r.altas > 0 ? '+' + r.altas : '0'}</td>
+            <td class="text-center font-weight-bold" style="color:${r.bajas > 0 ? '#ef4444' : '#64748b'};">${r.bajas > 0 ? '-' + r.bajas : '0'}</td>
+            <td class="text-center font-weight-bold">${r.cumplimiento}%</td>
+            <td class="text-center">${statusTag}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportDataToCSV() {
+      if (activeRecords.length === 0) return alert('No hay datos para exportar.');
+      let csv = "ID,Fecha,Local,Unidad,Turno,Cargo,Descanso,TR_Meta,Cantidad_Asistente,Asistencia_Efectiva,Faltante,Superavit,Altas_Fechain,Bajas_Fechaout,Cobertura_Pct\n";
+      activeRecords.forEach(r => {
+        csv += `"${r.id}","${r.fecha}","${r.local}","${r.unidad}","${r.turno}","${r.cargo}","${r.descanso}",${r.tr},${r.cantidad},${r.efectiva},${r.faltante},${r.superavit},${r.altas},${r.bajas},"${r.cumplimiento}%"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", `Reporte_SSAYS_TR_Rotacion_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
